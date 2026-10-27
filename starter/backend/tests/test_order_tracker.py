@@ -121,3 +121,57 @@ def test_list_all_orders_returns_stored_orders(order_tracker, mock_storage):
 def test_list_all_orders_returns_empty_list_if_no_orders(order_tracker, mock_storage):
     assert order_tracker.list_all_orders() == []
     mock_storage.get_all_orders.assert_called_once_with()
+
+
+def test_list_orders_by_status_returns_matching_orders(order_tracker, mock_storage):
+    pending_order = {
+        "order_id": "ORD001",
+        "item_name": "Laptop",
+        "quantity": 1,
+        "customer_id": "CUST001",
+        "status": "pending",
+    }
+    shipped_order = {
+        "order_id": "ORD002",
+        "item_name": "Mouse",
+        "quantity": 2,
+        "customer_id": "CUST002",
+        "status": "shipped",
+    }
+    another_pending_order = {
+        "order_id": "ORD003",
+        "item_name": "Keyboard",
+        "quantity": 1,
+        "customer_id": "CUST003",
+        "status": "pending",
+    }
+    mock_storage.get_all_orders.return_value = {
+        "ORD001": pending_order,
+        "ORD002": shipped_order,
+        "ORD003": another_pending_order,
+    }
+
+    assert order_tracker.list_orders_by_status("pending") == [
+        pending_order, another_pending_order,
+    ]
+    mock_storage.get_all_orders.assert_called_once_with()
+
+
+def test_list_orders_by_status_returns_empty_list_if_no_match(order_tracker, mock_storage):
+    mock_storage.get_all_orders.return_value = {
+        "ORD001": {
+            "order_id": "ORD001",
+            "item_name": "Laptop",
+            "quantity": 1,
+            "customer_id": "CUST001",
+            "status": "pending",
+        },
+    }
+
+    assert order_tracker.list_orders_by_status("shipped") == []
+    mock_storage.get_all_orders.assert_called_once_with()
+
+
+def test_list_orders_by_status_returns_empty_list_if_no_orders(order_tracker, mock_storage):
+    assert order_tracker.list_orders_by_status("pending") == []
+    mock_storage.get_all_orders.assert_called_once_with()
