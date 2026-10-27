@@ -60,12 +60,42 @@ def test_list_all_orders_api_with_data(client):
     client.post('/api/orders', json={"order_id": "LST002", "item_name": "Item B", "quantity": 2, "customer_id": "C2"})
     response = client.get('/api/orders')
     assert response.status_code == 200
-    assert len(response.json) == 2
+    assert response.json == [
+        {"order_id": "LST001", "item_name": "Item A", "quantity": 1, "customer_id": "C1", "status": "pending"},
+        {"order_id": "LST002", "item_name": "Item B", "quantity": 2, "customer_id": "C2", "status": "pending"},
+    ]
+
+@pytest.mark.parametrize("query", ["", "?status=", "?status=pending"])
+def test_list_orders_api_empty_storage(client, query):
+    response = client.get(f'/api/orders{query}')
+
+    assert response.status_code == 200
+    assert response.json == []
+
+def test_list_orders_api_empty_status_returns_all_orders(client):
+    order_data = {"order_id": "S001", "item_name": "A", "quantity": 1, "customer_id": "C1"}
+    client.post('/api/orders', json=order_data)
+
+    response = client.get('/api/orders?status=')
+
+    assert response.status_code == 200
+    assert response.json == [{**order_data, "status": "pending"}]
 
 def test_list_orders_by_status_api_matching(client):
     client.post('/api/orders', json={"order_id": "S001", "item_name": "A", "quantity": 1, "customer_id": "C1", "status": "pending"})
     client.post('/api/orders', json={"order_id": "S002", "item_name": "B", "quantity": 2, "customer_id": "C2", "status": "shipped"})
     response = client.get('/api/orders?status=pending')
     assert response.status_code == 200
-    assert len(response.json) == 1
-    assert response.json[0]['order_id'] == "S001"
+    assert response.json == [
+        {"order_id": "S001", "item_name": "A", "quantity": 1, "customer_id": "C1", "status": "pending"},
+    ]
+
+def test_list_orders_by_status_api_no_match(client):
+    client.post('/api/orders', json={
+        "order_id": "S001", "item_name": "A", "quantity": 1, "customer_id": "C1", "status": "pending"
+    })
+
+    response = client.get('/api/orders?status=shipped')
+
+    assert response.status_code == 200
+    assert response.json == []
