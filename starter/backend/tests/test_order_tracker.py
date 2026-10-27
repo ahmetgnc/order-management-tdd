@@ -34,3 +34,13 @@ def test_add_order_successfully(order_tracker, mock_storage):
         "customer_id": "CUST001",
         "status": "pending",
     })
+
+
+def test_add_order_raises_error_if_exists(order_tracker, mock_storage):
+    mock_storage.get_order.return_value = {"order_id": "ORD_EXISTING"}
+
+    with pytest.raises(ValueError, match="^Order with ID 'ORD_EXISTING' already exists\\.$"):
+        order_tracker.add_order("ORD_EXISTING", "New Item", 1, "CUST001")
+
+    mock_storage.get_order.assert_called_once_with("ORD_EXISTING")
+    mock_storage.save_order.assert_not_called()
