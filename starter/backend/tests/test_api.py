@@ -9,13 +9,19 @@ def client():
     with app.test_client() as client:
         yield client
 
-def test_add_order_api_success(client):
+@pytest.mark.parametrize("status", [None, "shipped"])
+def test_add_order_api_success(client, status):
     order_data = {
         "order_id": "API001", "item_name": "API Laptop", "quantity": 1, "customer_id": "APICUST001"
     }
+    if status is not None:
+        order_data["status"] = status
+
     response = client.post('/api/orders', json=order_data)
     assert response.status_code == 201
-    assert response.json['order_id'] == "API001"
+    expected_order = {**order_data, "status": status or "pending"}
+    assert response.json == expected_order
+    assert in_memory_storage.get_order("API001") == expected_order
 
 def test_get_order_api_success(client):
     client.post('/api/orders', json={
