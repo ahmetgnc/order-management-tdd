@@ -36,7 +36,13 @@ def get_order_api(order_id):
 
 @app.route('/api/orders/<string:order_id>/status', methods=['PUT'])
 def update_order_status_api(order_id):
-    pass
+    data = request.get_json()
+    try:
+        order_tracker.update_order_status(order_id, data["new_status"])
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 404
+
+    return jsonify(order_tracker.get_order_by_id(order_id)), 200
 
 @app.route('/api/orders', methods=['GET'])
 def list_orders_api():
