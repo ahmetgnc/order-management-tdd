@@ -63,3 +63,32 @@ def test_get_order_by_id_returns_existing_order(order_tracker, mock_storage):
 def test_get_order_by_id_returns_none_if_not_found(order_tracker, mock_storage):
     assert order_tracker.get_order_by_id("MISSING") is None
     mock_storage.get_order.assert_called_once_with("MISSING")
+
+
+def test_update_order_status_successfully(order_tracker, mock_storage):
+    mock_storage.get_order.return_value = {
+        "order_id": "ORD001",
+        "item_name": "Laptop",
+        "quantity": 1,
+        "customer_id": "CUST001",
+        "status": "pending",
+    }
+
+    order_tracker.update_order_status("ORD001", "shipped")
+
+    mock_storage.get_order.assert_called_once_with("ORD001")
+    mock_storage.save_order.assert_called_once_with("ORD001", {
+        "order_id": "ORD001",
+        "item_name": "Laptop",
+        "quantity": 1,
+        "customer_id": "CUST001",
+        "status": "shipped",
+    })
+
+
+def test_update_order_status_raises_error_if_not_found(order_tracker, mock_storage):
+    with pytest.raises(ValueError, match="^Order with ID 'MISSING' not found\\.$"):
+        order_tracker.update_order_status("MISSING", "shipped")
+
+    mock_storage.get_order.assert_called_once_with("MISSING")
+    mock_storage.save_order.assert_not_called()
