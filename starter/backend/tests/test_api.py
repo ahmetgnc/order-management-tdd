@@ -24,16 +24,18 @@ def test_add_order_api_success(client, status):
     assert in_memory_storage.get_order("API001") == expected_order
 
 def test_get_order_api_success(client):
-    client.post('/api/orders', json={
+    order_data = {
         "order_id": "GET001", "item_name": "Test Item", "quantity": 1, "customer_id": "C1"
-    })
+    }
+    client.post('/api/orders', json=order_data)
     response = client.get('/api/orders/GET001')
     assert response.status_code == 200
-    assert response.json['order_id'] == "GET001"
+    assert response.json == {**order_data, "status": "pending"}
 
 def test_get_order_api_not_found(client):
     response = client.get('/api/orders/NONEXISTENT')
     assert response.status_code == 404
+    assert response.json == {"error": "Order with ID 'NONEXISTENT' not found."}
 
 def test_update_order_status_api_success(client):
     client.post('/api/orders', json={
